@@ -5,16 +5,12 @@ import org.json.simple.JSONObject;
 import java.io.FileWriter;
 import java.io.IOException;
 
-/**
- * Экспортирует результаты MST в CSV-таблицу
- * и добавляет сравнительный анализ Prim vs Kruskal.
- */
+
 public class CsvExporter {
 
     public static void export(JSONArray results, String filePath) {
         try (FileWriter writer = new FileWriter(filePath)) {
 
-            // Заголовок CSV
             writer.write(
                     "Graph ID,Vertices,Edges,"
                             + "Prim Cost,Prim Time (ms),Prim Ops,"
@@ -33,18 +29,17 @@ public class CsvExporter {
                 JSONObject prim = (JSONObject) result.get("prim");
                 JSONObject kruskal = (JSONObject) result.get("kruskal");
 
+
                 double primCost = getDouble(prim, "total_cost");
-                double primTime = getDouble(prim, "execution_time_ms");
-                long primOps = getLong(prim, "operations_count");
+                double primTime = getDouble(prim, "execution_time_ms", "time_ms");
+                long primOps = getLong(prim, "operations_count", "operations");
 
                 double kruskalCost = getDouble(kruskal, "total_cost");
-                double kruskalTime = getDouble(kruskal, "execution_time_ms");
-                long kruskalOps = getLong(kruskal, "operations_count");
+                double kruskalTime = getDouble(kruskal, "execution_time_ms", "time_ms");
+                long kruskalOps = getLong(kruskal, "operations_count", "operations");
 
-                // Разница во времени (Prim – Kruskal)
                 double deltaTime = primTime - kruskalTime;
 
-                // Процент разницы в количестве операций
                 double deltaOps = (primOps == 0)
                         ? 0.0
                         : ((double) (kruskalOps - primOps) / primOps) * 100.0;
@@ -71,14 +66,21 @@ public class CsvExporter {
         }
     }
 
-    // Безопасное извлечение чисел
-    private static double getDouble(JSONObject obj, String key) {
-        Object val = (obj != null) ? obj.get(key) : null;
-        return (val instanceof Number) ? ((Number) val).doubleValue() : 0.0;
+    private static double getDouble(JSONObject obj, String... keys) {
+        if (obj == null) return 0.0;
+        for (String key : keys) {
+            Object val = obj.get(key);
+            if (val instanceof Number) return ((Number) val).doubleValue();
+        }
+        return 0.0;
     }
 
-    private static long getLong(JSONObject obj, String key) {
-        Object val = (obj != null) ? obj.get(key) : null;
-        return (val instanceof Number) ? ((Number) val).longValue() : 0L;
+    private static long getLong(JSONObject obj, String... keys) {
+        if (obj == null) return 0L;
+        for (String key : keys) {
+            Object val = obj.get(key);
+            if (val instanceof Number) return ((Number) val).longValue();
+        }
+        return 0L;
     }
 }
